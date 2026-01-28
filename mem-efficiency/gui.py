@@ -13,7 +13,7 @@ import sys
 import psutil
 import platform
 
-# ---------------- Optional: matplotlib for graphs ----------------
+#matplotlib for graph
 HAS_MPL = True
 try:
     import matplotlib
@@ -117,7 +117,7 @@ class WinPageFaultsPerSec:
             pass
         self.ok = False
 
-# ---------------- Paths ----------------
+#paths
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
 def resolve_path(p: str) -> str:
@@ -136,7 +136,7 @@ def ensure_dir_for_file(file_path: str):
 def ensure_dir(path_dir: str):
     os.makedirs(path_dir, exist_ok=True)
 
-# ---------------- Helpers ----------------
+#helpers
 def now_iso():
     return datetime.now(timezone.utc).isoformat()
 
@@ -160,7 +160,7 @@ def beep():
     except Exception:
         pass
 
-# ---------------- "Efficiency" scoring ----------------
+#scoring 
 PF_WARN = 200.0
 PF_CRIT = 800.0
 
@@ -175,30 +175,30 @@ def memory_efficiency_score(used_pct, swap_pct, commit_pct, pf_per_sec, avail_gb
     reasons = []
     score = 100.0
 
-    # RAM pressure
+    #RAM pressure
     if used_pct > 70:
         score -= (used_pct - 70) * 1.1
         reasons.append(f"RAM high ({used_pct:.1f}%)")
 
-    # Swap usage (strong penalty)
+    #Swap usage
     if swap_pct > 5:
         score -= (swap_pct - 5) * 2.2
         reasons.append(f"Swap used ({swap_pct:.1f}%)")
 
-    # Commit pressure (if available)
+    #Commit pressure
     if commit_pct is not None:
         try:
-            if commit_pct == commit_pct:  # not NaN
+            if commit_pct == commit_pct:  
                 if commit_pct > 75:
                     score -= (commit_pct - 75) * 0.9
                     reasons.append(f"Commit high ({commit_pct:.1f}%)")
         except Exception:
             pass
 
-    # Page faults/sec (churn indicator)
+    #Page faults/sec
     if pf_per_sec is not None:
         try:
-            if pf_per_sec == pf_per_sec:  # not NaN
+            if pf_per_sec == pf_per_sec:  
                 if pf_per_sec > PF_WARN:
                     if pf_per_sec <= PF_CRIT:
                         score -= (pf_per_sec - PF_WARN) / 20.0
@@ -208,7 +208,7 @@ def memory_efficiency_score(used_pct, swap_pct, commit_pct, pf_per_sec, avail_gb
         except Exception:
             pass
 
-    # Low headroom penalty
+    #Low headroom penalty
     if total_gb > 0:
         avail_pct = (avail_gb / total_gb) * 100.0
         if avail_pct < 10:
@@ -371,7 +371,7 @@ class MemoryDashboard(tk.Tk):
         except Exception:
             return "-"
 
-    # ---------------- UI ----------------
+    #ui
     def _build_ui(self):
         self.f_big = Font(family="Segoe UI", size=18, weight="bold")
         self.f_mid = Font(family="Segoe UI", size=11)
@@ -465,7 +465,7 @@ class MemoryDashboard(tk.Tk):
         self.eff_var = tk.StringVar(value="Efficiency: -")
         ttk.Label(eff_row, textvariable=self.eff_var, font=self.f_mid).pack(side="left")
 
-        # -------- Graph Controls (checkboxes) --------
+        #Graph Controls 
         graph_box = ttk.LabelFrame(left, text="Time-series Graphs", padding=8)
         graph_box.pack(fill="x", pady=(0, 8))
 
@@ -562,7 +562,7 @@ class MemoryDashboard(tk.Tk):
         btns.pack(fill="x", pady=(6, 0))
         ttk.Button(btns, text="Clear Logs", command=self._clear_logs).pack(side="left")
 
-    # ---------------- Browse: selects OUTPUT CSV path ----------------
+    #selects OUTPUT CSV path
     def browse_csv(self):
         initial = resolve_path(self.out_var.get())
         init_dir = os.path.dirname(initial) if initial else BASE_DIR
@@ -606,7 +606,7 @@ class MemoryDashboard(tk.Tk):
         except Exception:
             return default
 
-    # ---------------- Tree double click ----------------
+    #Tree double click
     def on_tree_double_click(self, event=None):
         sel = self.tree.selection()
         if not sel:
@@ -679,7 +679,7 @@ class MemoryDashboard(tk.Tk):
         ttk.Button(btn_row, text="Kill All (admin)", command=kill_all).pack(side="left", padx=8)
         ttk.Button(btn_row, text="Close", command=win.destroy).pack(side="right")
 
-    # ---------------- monitor ----------------
+    #monitor
     def start_monitor(self):
         if self.monitor_running:
             return
@@ -775,7 +775,7 @@ class MemoryDashboard(tk.Tk):
         self.btn_log.config(state="disabled")
         self.status_var.set("Stopped.")
 
-    # ---------------- logging ----------------
+    #logging
     def toggle_logging(self):
         if not self.monitor_running:
             return
@@ -855,7 +855,7 @@ class MemoryDashboard(tk.Tk):
             if self.monitor_running:
                 self.status_var.set("Monitoring (logging stopped).")
 
-    # ---------------- Graph update ----------------
+    #Graph update
     def _update_graph_series(self, sys_snap):
         try:
             now_epoch = time.time()
@@ -898,13 +898,13 @@ class MemoryDashboard(tk.Tk):
         self.axL.cla()
         self.axR.cla()
 
-        # ---- labels / grid ----
+        #labels/grid
         self.axL.set_title("Selected metrics over time", pad=20)
         self.axL.set_xlabel("seconds (relative)")
         self.axL.set_ylabel("%")
         self.axL.grid(True, alpha=0.3)
 
-        # ✅ make sure the twin axis really lives on the RIGHT
+        #make sure the twin axis really lives on the RIGHT
         self.axR.set_ylabel("GB / PF/s")
         self.axR.yaxis.set_label_position("right")
         self.axR.yaxis.tick_right()
@@ -912,7 +912,7 @@ class MemoryDashboard(tk.Tk):
         handles = []
         labels = []
 
-        # left axis (%)
+        #left axis(%)
         if self.show_ram.get():
             h, = self.axL.plot(xs, list(self.ram_series), label="RAM %")
             handles.append(h); labels.append("RAM %")
@@ -923,7 +923,7 @@ class MemoryDashboard(tk.Tk):
             h, = self.axL.plot(xs, list(self.commit_series), label="Commit %")
             handles.append(h); labels.append("Commit %")
 
-        # right axis (GB + PF/s)
+        #right axis (GB + PF/s)
         if self.show_avail.get():
             h, = self.axR.plot(xs, list(self.avail_series), label="Avail GB")
             handles.append(h); labels.append("Avail GB")
@@ -931,7 +931,7 @@ class MemoryDashboard(tk.Tk):
             h, = self.axR.plot(xs, list(self.pf_series), label="PageFaults/sec")
             handles.append(h); labels.append("PageFaults/sec")
 
-        # markers
+        #markers
         for (epoch, level) in list(self.alert_markers):
             x = epoch - t0
             if x < 0:
@@ -941,7 +941,7 @@ class MemoryDashboard(tk.Tk):
 
         self.axL.set_ylim(0, 100)
 
-        # ✅ legend ABOVE plot (not inside)
+        #legend ABOVE plot (not inside)
         if handles:
             self.axL.legend(
                 handles, labels,
@@ -953,8 +953,8 @@ class MemoryDashboard(tk.Tk):
                 frameon=True
             )
 
-        # ✅ HARD fix for your screenshot: give left margin more room
-        # then let matplotlib tighten safely
+        
+        
         try:
             self.fig.subplots_adjust(left=0.12, right=0.92, top=0.80, bottom=0.25)
             self.fig.tight_layout()
@@ -963,7 +963,7 @@ class MemoryDashboard(tk.Tk):
             pass
 
 
-    # ---------------- UI refresh ----------------
+    #UI refresh
     def _refresh_ui(self):
         if self.monitor_running:
             with self.lock:
@@ -1008,7 +1008,7 @@ class MemoryDashboard(tk.Tk):
                     pf_txt = f"Page Faults/sec: {pf_raw}" if pf_raw != "" else "Page Faults/sec: -"
                     self.extra_var.set(commit_txt + " | " + pf_txt)
 
-                    # Efficiency calculation
+                    #Efficiency calculation
                     commit_pct = None
                     try:
                         if commit_pct_raw != "":
@@ -1035,11 +1035,11 @@ class MemoryDashboard(tk.Tk):
                     why = (" | " + ", ".join(reasons)) if reasons else ""
                     self.eff_var.set(f"Efficiency: {score}/100 ({label}){why}")
 
-                    # store in snapshot for CSV/log
+                    #store in snapshot for CSV/log
                     sys_snap["efficiency_score"] = score
                     sys_snap["efficiency_label"] = label
 
-                    # Alerts
+                    #Alerts
                     level = "OK"
                     msg = "OK"
                     if used_pct >= 92 or swap_pct >= 15:
@@ -1064,7 +1064,7 @@ class MemoryDashboard(tk.Tk):
                     self._update_graph_series(sys_snap)
                     self._redraw_graph()
 
-            # update top table
+            #update top table
             if bool(self.enable_top_var.get()):
                 for item in self.tree.get_children():
                     self.tree.delete(item)
